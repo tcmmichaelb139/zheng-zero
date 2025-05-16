@@ -25,16 +25,18 @@ REVERSE_CARDS = {v: k for k, v in CARDS.items()}
 REVERSE_SUITS = {v: k for k, v in SUITS.items()}
 
 
-def _print_cards(cards):
+def _print_cards(cards, player=""):
     """
     Print the hand of cards.
     :param cards: The hand of cards
     """
     if len(cards) == 0:
-        print("No cards (pass)")
+        # print("No cards (pass)")
         return
     for card in cards:
-        print(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}", end=", ")
+        print(
+            f"{player}: {REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}", end=", "
+        )
     print()
 
 
@@ -44,3 +46,58 @@ def _print_card(card):
     :param card: The card to be printed
     """
     print(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}")
+
+
+def card2int(card):
+    """
+    Convert the card to an integer.
+    """
+    if card[0] == 13 or card[0] == 14:
+        return 52 + card[0] - 13
+    else:
+        return card[0] * 4 + card[1]
+
+
+def int2card(card):
+    """
+    Convert the integer to a card.
+    """
+    if card >= 52:
+        return (card - 52 + 13, 0)
+    else:
+        return (card // 4, card % 4)
+
+
+TRICKS = {
+    "single": 1,
+    "pair": 2,
+    "triple": 3,
+    "straight_1": 4,
+    "straight_22": 5,
+    "straight_333": 6,
+    "bomb": 7,
+}
+
+
+def trick2int(trick):
+    """
+    Convert the trick to an integer.
+    :param trick: The trick to be converted
+    :return: The trick as an integer
+    """
+    if trick == "pass" or trick is None:
+        return 0
+    else:
+        return TRICKS[trick]
+
+
+def int2trick(trick):
+    """
+    Convert the trick to an integer.
+    :param trick: The trick to be converted
+    :return: The trick as an integer
+    """
+    if trick == 0:
+        return "pass"
+    else:
+        return list(TRICKS.keys())[list(TRICKS.values()).index(trick)]

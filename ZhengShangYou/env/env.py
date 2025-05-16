@@ -1,7 +1,7 @@
 import numpy as np
 
 from ZhengShangYou.env.move_detector import detect_move
-from ZhengShangYou.env.utils import _print_cards
+from ZhengShangYou.env.utils import _print_cards, card2int
 
 DECK = [
     ("3", "Spades"),
@@ -83,16 +83,6 @@ SUITS = {
     "Diamonds": 3,  # Diamonds
 }
 
-TRICKS = {
-    "single": 0,
-    "pair": 1,
-    "triple": 2,
-    "straight_1": 3,
-    "straight_22": 4,
-    "straight_333": 5,
-    "bomb": 3,
-}
-
 
 class Env:
     def __init__(self, players) -> None:
@@ -108,6 +98,7 @@ class Env:
         self.rounds = 0  # number of rounds played
         self.results = []  # the results of the game
 
+        self.cards_played = [0] * 54
         self.history = []
 
     def reset(self):
@@ -121,8 +112,9 @@ class Env:
         self.round_passed = np.array([False] * len(self.players))
 
         self.rounds = 0
-        self.results = None
+        self.results = []
 
+        self.cards_played = [0] * 54
         self.history = []
 
     def step(self):
@@ -131,12 +123,31 @@ class Env:
         :return: The game information
         """
 
-        while self._game_over() is False:
-            self._play()
+        move = self.players[self.current_player].act()
 
-        print(f"Game over! Player {self.results} win!")
-        print(f"Game history: {self.history}")
-        print(f"Game rounds: {self.rounds}")
+        for m in move:
+            self.cards_played[card2int(m)] = 1
+
+        # _print_cards(move, self.players[self.current_player].player_id)
+
+        if move != []:
+            self.trick = detect_move(move)
+            self.last_played_cards = move
+            self.round_passed[self.current_player] = False
+            self.trick_leader = self.current_player
+            self.current_trick = self.trick
+        else:
+            self.round_passed[self.current_player] = True
+
+        self.history.append(move)
+
+        if not self._is_player_finished():
+            self._players_played_out()
+
+        self._next_player()
+
+        if self._is_round_over():
+            self._new_round()
 
     def _game_over(self):
         """
@@ -171,43 +182,17 @@ class Env:
             "round_passed": self.round_passed,
             "rounds": self.rounds,
             "history": self.history,
+            "cards_played": self.cards_played,
+            "cards": self.players[self.current_player].cards,
         }
         return info
-
-    def _play(self):
-        """
-        Play a card.
-        :param move: The card to be played
-        """
-        if self._is_round_over():
-            self._new_round()
-
-        player = self.players[self.current_player]
-        move = player.play(self._get_info())
-
-        _print_cards(move)
-
-        if move != []:
-            self.trick = detect_move(move)
-            self.last_played_cards = move
-            self.round_passed[self.current_player] = False
-            self.trick_leader = self.current_player
-            self.current_trick = self.trick
-        else:
-            self.round_passed[self.current_player] = True
-
-        self.history.append(move)
-
-        if not self._is_player_finished():
-            self._players_played_out()
-
-        self._next_player()
 
     def _is_round_over(self):
         """
         Check if the round is over.
         :return: True if the round is over, False otherwise
         """
+
         return (
             np.sum(self.round_passed) == len(self.players) - 1
             and self.current_player == self.trick_leader

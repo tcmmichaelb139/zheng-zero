@@ -26,16 +26,6 @@ SUITS = {
     "Diamonds": 3,  # Diamonds
 }
 
-TRICKS = {
-    "single": 0,
-    "pair": 1,
-    "triple": 2,
-    "straight_1": 3,
-    "straight_22": 4,
-    "straight_333": 5,
-    "bomb": 3,
-}
-
 
 class MoveGenerator:
     def __init__(self, cards_list) -> None:
