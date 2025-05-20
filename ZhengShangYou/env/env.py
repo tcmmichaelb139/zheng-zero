@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 from ZhengShangYou.env.move_detector import detect_move
 from ZhengShangYou.env.utils import _print_cards, card2int
@@ -85,7 +86,7 @@ SUITS = {
 
 
 class Env:
-    def __init__(self, players) -> None:
+    def __init__(self, players, params) -> None:
         self.players = players
         self.current_player = 0
         self.trick_leader = 0  # the player who (currently) leads the trick
@@ -100,6 +101,7 @@ class Env:
 
         self.cards_played = [0] * 54
         self.history = []
+        self.params = params
 
     def reset(self):
         for player in self.players:
@@ -125,10 +127,8 @@ class Env:
 
         move = self.players[self.current_player].act()
 
-        for m in move:
-            self.cards_played[card2int(m)] = 1
-
-        # _print_cards(move, self.players[self.current_player].player_id)
+        if self.params["log"]:
+            _print_cards(move, self.players[self.current_player].player_id)
 
         if move != []:
             self.trick = detect_move(move)
@@ -139,8 +139,6 @@ class Env:
         else:
             self.round_passed[self.current_player] = True
 
-        self.history.append(move)
-
         if not self._is_player_finished():
             self._players_played_out()
 
@@ -148,6 +146,12 @@ class Env:
 
         if self._is_round_over():
             self._new_round()
+
+    def post_step(self, move):
+        for m in move:
+            self.cards_played[card2int(m)] = 1
+
+        self.history.append(move)
 
     def _game_over(self):
         """
@@ -165,17 +169,31 @@ class Env:
         for i in range(len(deck)):
             deck[i] = (CARDS[deck[i][0]], SUITS[deck[i][1]])
         np.random.shuffle(deck)
+        order = np.random.permutation(4)
         for i in range(len(self.players)):
-            hand = deck[i * 13 : (i + 1) * 13]
-            if i <= 1:
-                hand.extend([deck[-2 + i]])
-            self.players[i]._deal_hand(hand)
+            idx = order[i]
+            hand = deck[idx * 13 : (idx + 1) * 13]
+            if idx <= 1:
+                hand.extend([deck[-2 + idx]])
+            self.players[idx]._deal_hand(hand)
+        self._starting_player()
 
-    def _get_info(self):
+    def _starting_player(self):
+        for i in range(len(self.players)):
+            if self.players[i]._has_card((0, 1)):
+                # the player has a 3 of hearts
+                self.current_player = i
+                self.trick_leader = i
+                break
+
+    def _get_info(self, player_id=None):
         """
         Get the game information.
         :return: The game information
         """
+        if player_id is None:
+            player_id = self.current_player
+
         info = {
             "trick": self.current_trick,
             "last_played_cards": self.last_played_cards,
@@ -183,9 +201,9 @@ class Env:
             "rounds": self.rounds,
             "history": self.history,
             "cards_played": self.cards_played,
-            "cards": self.players[self.current_player].cards,
+            "cards": self.players[player_id].cards,
         }
-        return info
+        return deepcopy(info)
 
     def _is_round_over(self):
         """

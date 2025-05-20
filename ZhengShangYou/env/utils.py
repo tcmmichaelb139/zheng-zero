@@ -30,13 +30,12 @@ def _print_cards(cards, player=""):
     Print the hand of cards.
     :param cards: The hand of cards
     """
+    print(f"{player}: ", end="")
     if len(cards) == 0:
-        # print("No cards (pass)")
+        print("(pass)")
         return
     for card in cards:
-        print(
-            f"{player}: {REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}", end=", "
-        )
+        print(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}", end=", ")
     print()
 
 

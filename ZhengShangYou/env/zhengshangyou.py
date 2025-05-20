@@ -2,12 +2,12 @@ from ZhengShangYou.env.env import Env
 
 
 class ZhengShangYou:
-    def __init__(self, players) -> None:
+    def __init__(self, players, params) -> None:
         self.players = []
         for i in range(len(players)):
             self.players.append(DummyPlayer(i))
 
-        self._env = Env(self.players)
+        self._env = Env(self.players, params)
 
         self._env.reset()
 
@@ -20,7 +20,7 @@ class ZhengShangYou:
 
         return self._get_obs()
 
-    def step(self, action):
+    def step(self, action, add_info={}):
         """
         Play a step of the game.
         :return: The game information
@@ -38,24 +38,49 @@ class ZhengShangYou:
 
         if current_player in self._env.results and results != self._env.results:
             if self._env.results.index(current_player) == 0:
-                reward = 1.0
-            else:
-                reward = -1.0
+                reward = 5.0
+            elif self._env.results.index(current_player) == 1:
+                reward = -3.0
+            elif self._env.results.index(current_player) == 2:
+                reward = -4.0
+            elif self._env.results.index(current_player) == 3:
+                reward = -5.0
+
+            for i in range(len(self.players)):
+                if current_player == i:
+                    continue
+
+                reward += 0.1 * len(self.players[i].cards)
+
+        if len(action) > 1:
+            reward += 0.3 * len(action)
+        if "consec_passes" in add_info:
+            reward -= 0.2 * add_info["consec_passes"]
+        if len(self._env.results) == 3 and self.players[current_player].cards != []:
+            reward -= 100.0
 
         if self._game_over():
             game_over = True
         else:
-            obs = self._get_obs()
+            obs = self._get_obs(self._current_player())
 
-        return obs, reward, game_over, {}
+        self._env.post_step(action)
+        self.players[current_player]._played_hand(action)
 
-    def _get_obs(self):
+        return (
+            obs,
+            reward,
+            game_over,
+            {"player_next_obs": self._get_obs(current_player)},
+        )
+
+    def _get_obs(self, player_id=None):
         """
         Get the current observation of the game.
         :return: The game information
         """
 
-        obs = self._env._get_info()
+        obs = self._env._get_info(player_id)
 
         return obs
 
@@ -89,7 +114,6 @@ class DummyPlayer:
 
     def set_action(self, action):
         self.action = action
-        self._played_hand(action)
 
     def _deal_hand(self, cards):
         """
@@ -104,6 +128,9 @@ class DummyPlayer:
         Sort the player's hand.
         """
         self.cards.sort(key=lambda x: (x[0], x[1]))
+
+    def _has_card(self, card):
+        return card in self.cards
 
     def _played_hand(self, move):
         """

@@ -16,16 +16,16 @@ Patterns:
 
 ## Algorithms
 
-### Basic
+- model is not winning completely yet, going to try some other models
 
-DQN with 54 observations (one for every card) and certain actions:
+current model uses 224 inputs and one output (q value):
 
-- play (pattern) lowest card
-- play (pattern) highest card
-- pass
+- 8 for the trick
+- 54 for the last played hand
+- 54 for all the played cards
+- 54 for the current hand
+- 54 for the action
 
-### Advanced
+current model gets 1st/2nd ~70-80% and loses < 10% of the time against greedy random players (weighted by length of the valid hands played)
 
-DQN with 54 observations (one for every card) and 55 actions (one for every card + one for pass).
-
-We select the action based on the
+tested to around 20000 episodes out of 100000

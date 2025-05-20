@@ -48,7 +48,7 @@ class MoveGenerator:
         :return: A list of possible single card moves
         """
         self.single_card_moves = []
-        for card in set(self.cards_list):
+        for card in self.cards_list:
             self.single_card_moves.append([card])
         return self.single_card_moves
 
