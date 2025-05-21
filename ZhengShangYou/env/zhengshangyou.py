@@ -38,13 +38,13 @@ class ZhengShangYou:
 
         if current_player in self._env.results and results != self._env.results:
             if self._env.results.index(current_player) == 0:
-                reward = 5.0
+                reward += 5.0
             elif self._env.results.index(current_player) == 1:
-                reward = -3.0
+                reward += -5.0
             elif self._env.results.index(current_player) == 2:
-                reward = -4.0
+                reward += -5.0
             elif self._env.results.index(current_player) == 3:
-                reward = -5.0
+                reward += -5.0
 
             for i in range(len(self.players)):
                 if current_player == i:
@@ -54,10 +54,8 @@ class ZhengShangYou:
 
         if len(action) > 1:
             reward += 0.3 * len(action)
-        if "consec_passes" in add_info:
-            reward -= 0.2 * add_info["consec_passes"]
         if len(self._env.results) == 3 and self.players[current_player].cards != []:
-            reward -= 100.0
+            reward -= 10.0
 
         if self._game_over():
             game_over = True
@@ -65,7 +63,6 @@ class ZhengShangYou:
             obs = self._get_obs(self._current_player())
 
         self._env.post_step(action)
-        self.players[current_player]._played_hand(action)
 
         return (
             obs,

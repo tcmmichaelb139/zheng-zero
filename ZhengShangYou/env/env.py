@@ -139,6 +139,8 @@ class Env:
         else:
             self.round_passed[self.current_player] = True
 
+        self.players[self.current_player]._played_hand(move)
+
         if not self._is_player_finished():
             self._players_played_out()
 

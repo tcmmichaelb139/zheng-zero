@@ -65,6 +65,10 @@ def train_model(
         while not done:
             current_player = env._current_player()
             action, add_info = players[current_player].play(state)
+
+            if total_reward < -80 and current_player in zhengzero_player_ids:
+                action = players[current_player]._random_move(state)
+
             next_state, reward, done, addit = env.step(action, add_info)
 
             players[current_player].remember(
@@ -199,7 +203,7 @@ class ZhengZeroPlayer(BasePlayer):
                         len(ns["cards"]) == 0,
                     )
                 )
-            print("total reward", total_reward)
+            print(f"total reward: {total_reward:0.2f}")
             self.current_replay = []
 
     def update_target_model(self):

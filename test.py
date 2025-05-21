@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     player1 = ZhengZeroPlayer(
         player_id=0,
-        model_path="ZhengShangYou/zhengzero/models/zhengzero_0.pth",
+        model_path="ZhengShangYou/zhengzero/models/zheng-zero-0.pth",
         model_params={
             "lr": 0.01,
             "gamma": 0.95,
