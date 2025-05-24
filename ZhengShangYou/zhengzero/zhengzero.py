@@ -1,7 +1,14 @@
 from ZhengShangYou.env.zhengshangyou import ZhengShangYou
 from ZhengShangYou.players.base_player import BasePlayer
 from ZhengShangYou.env.move_generator import MoveGenerator
-from ZhengShangYou.env.utils import card2int, int2card, trick2int, int2trick
+from ZhengShangYou.env.utils import (
+    card2int,
+    int2card,
+    trick2int,
+    int2trick,
+    create_logger,
+)
+from ZhengShangYou.zhengzero.sumtree import SumTree
 
 import os
 import torch
@@ -9,9 +16,11 @@ import torch.nn as nn
 import numpy as np
 import random
 from collections import deque
-from tqdm import tqdm
 from copy import deepcopy
+import matplotlib.pyplot as plt
 
+
+logger = create_logger(__name__)
 
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
@@ -40,8 +49,6 @@ def train_model(
     players,
     zhengzero_player_ids,
     batch_size,
-    replay_num,
-    num_episodes,
     params,
 ):
     """
@@ -51,47 +58,134 @@ def train_model(
     :param num_episodes: The number of episodes to train
     """
 
-    env = ZhengShangYou(players, params)
-
+    episode = 0
+    all_rewards = [[] for _ in range(len(zhengzero_player_ids))]
     win_count = np.zeros((len(players), len(players)), dtype=int)
+    win_count_100 = np.zeros((len(players), len(players)), dtype=int)
 
-    for episode in range(num_episodes):
-        print(f"##### Episode {episode + 1}/{num_episodes} #####")
+    try:
+        env = ZhengShangYou(players, params)
 
-        state = env.reset()
-        total_reward = 0
-        done = False
+        while True:
+            logger.info(f"##### Episode {episode + 1} #####")
 
-        while not done:
-            current_player = env._current_player()
-            action, add_info = players[current_player].play(state)
+            state = env.reset()
+            total_reward = [-100] * len(zhengzero_player_ids)
+            done = False
 
-            if total_reward < -80 and current_player in zhengzero_player_ids:
-                action = players[current_player]._random_move(state)
+            while not done:
+                current_player = env._current_player()
+                action = players[current_player].play(state)
 
-            next_state, reward, done, addit = env.step(action, add_info)
+                next_state, reward, done = env.step(action)
 
-            players[current_player].remember(
-                state, action, reward, addit["player_next_obs"], done
-            )
-            state = next_state
+                players[current_player].remember(state, action, reward, False)
 
-            total_reward += reward
+                state = next_state
 
-        if params["train"]:
+                if current_player in zhengzero_player_ids:
+                    total_reward[zhengzero_player_ids.index(current_player)] = max(
+                        total_reward[zhengzero_player_ids.index(current_player)],
+                        reward,
+                    )
+
+            final_rewards = env.get_final_rewards()
+
+            for i, ids in enumerate(zhengzero_player_ids):
+                total_reward[i] += final_rewards[ids]
+                all_rewards[i].append(total_reward[i])
+
             for i in zhengzero_player_ids:
-                players[i].replay(batch_size, replay_num, episode)
+                players[i].remember(None, None, final_rewards[i], True)
+                players[i].replay(batch_size, episode + 1)
 
-        for i, j in enumerate(env._env.results):
-            win_count[j][i] += 1
+            for i, j in enumerate(env._env.results):
+                win_count_100[j][i] += 1
 
-        if episode % 100 == 0:
-            # print wins
-            for i in range(len(players)):
-                print(
-                    f"Player {i} wins: {win_count[i]}",
-                )
-            win_count = np.zeros((len(players), len(players)), dtype=int)
+            if (episode + 1) % 100 == 0:
+                for i in range(len(players)):
+                    for j in range(len(players)):
+                        win_count[i][j] += win_count_100[i][j]
+
+                for i in range(len(players)):
+                    wins = " ".join(
+                        [
+                            f"{win_count[i][j]} ({win_count_100[i][j]})"
+                            for j in range(len(players))
+                        ]
+                    )
+
+                    logger.info(
+                        f"Player {i} wins: [{wins}]",
+                    )
+
+                win_count_100 = np.zeros((len(players), len(players)), dtype=int)
+
+            episode += 1
+
+    except KeyboardInterrupt:
+        # plot the reward
+
+        plt.scatter(
+            range(len(all_rewards[0])),
+            all_rewards[0],
+            s=1,
+            c="blue",
+            alpha=0.5,
+            label="Reward",
+        )
+        plt.xlabel("Episode")
+        plt.ylabel("Reward")
+        plt.title("Reward vs Episode")
+        plt.savefig("reward.png")
+        plt.show()
+    except Exception as e:
+        logger.exception(e)
+
+
+class ReplayBuffer:
+    def __init__(self, buffer_size, alpha=0.1, beta=0.1, epsilon=0.01):
+        self.sumtree = SumTree(buffer_size)
+        self.buffer_size = buffer_size
+        self.alpha = alpha
+        self.beta = beta
+        self.epsilon = epsilon
+
+    def add(self, experience):
+        max_p = self.sumtree.max_priority
+        self.sumtree.add(max_p, experience)
+
+    def sample(self, batch_size):
+        batch = []
+        indices = []
+        is_weights = []
+
+        segment = self.sumtree.total_priority / batch_size
+
+        for i in range(batch_size):
+            a = segment * i
+            b = segment * (i + 1)
+            value = np.random.uniform(a, b)
+            index, priority, data = self.sumtree.get_leaf(value)
+
+            sampling_prob = priority / self.sumtree.total_priority
+            weight = (self.sumtree.size * sampling_prob) ** (-self.beta)
+
+            batch.append(data)
+            indices.append(index)
+            is_weights.append(weight)
+
+        is_weights /= np.max(is_weights)
+
+        return batch, indices, is_weights
+
+    def update(self, indices, td_errors):
+        new_priorities = (np.abs(td_errors) + self.epsilon) ** self.alpha
+
+        self.sumtree.update(indices, new_priorities)
+
+    def __len__(self):
+        return self.sumtree.size
 
 
 class ZhengZeroPlayer(BasePlayer):
@@ -103,20 +197,19 @@ class ZhengZeroPlayer(BasePlayer):
         self.target_model = DQN(input_dim=224, output_dim=1).to(device)
 
         self.model_path = model_path
-
-        if model_path:
-            if os.path.exists(model_path):
-                self.model.load_state_dict(torch.load(model_path))
-                self.target_model.load_state_dict(torch.load(model_path))
+        self.load_model()
 
         self.params = model_params
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.params["lr"])
+        self.optimizer = torch.optim.RMSprop(
+            self.model.parameters(),
+            lr=self.params["lr"],
+        )
 
         self.model.eval()
 
         self.consec_passes = 0
 
-        self.replay_buffer = deque(maxlen=buffer_size)
+        self.replay_buffer = ReplayBuffer(buffer_size, alpha=0.6, beta=0.4)
         self.buffer_size = buffer_size
         self.current_replay = []
 
@@ -124,8 +217,7 @@ class ZhengZeroPlayer(BasePlayer):
         valid_moves = self._get_valid_moves(info)
 
         if np.random.rand() <= self.params["epsilon"]:
-            # Exploration: select a random move
-            return self._random_move(info), {"valid_moves": valid_moves}
+            return self._random_move(info)
 
         state_moves = torch.tensor(
             np.array([state2array(info, move) for move in valid_moves]),
@@ -137,19 +229,7 @@ class ZhengZeroPlayer(BasePlayer):
 
         selected_move = valid_moves[np.argmax(q_value)]
 
-        # print(selected_move, q_value)
-
-        # print(selected_move, len(valid_moves))
-
-        if selected_move == [] and len(valid_moves) > 1:
-            self.consec_passes += 1
-        else:
-            self.consec_passes = 0
-
-        return selected_move, {
-            "valid_moves": valid_moves,
-            "consec_passes": self.consec_passes,
-        }
+        return selected_move
 
     def _get_valid_moves(self, info):
         """
@@ -174,36 +254,29 @@ class ZhengZeroPlayer(BasePlayer):
 
         return valid_moves
 
-    def remember(self, state, action, reward, next_state, done):
-        # Store the experience in a replay buffer
-        if len(self.current_replay) == 0 and state["cards"] == []:
-            return
+    def remember(self, state, action, reward, done):
+        if not done:
+            self.current_replay.append((deepcopy(state), action, reward, done))
+        if done:
+            if self.params["train"]:
+                total_reward = -10
 
-        self.current_replay.append(
-            (deepcopy(state), action, reward, deepcopy(next_state), done)
-        )
-        if len(next_state["cards"]) == 0 or done:
-            # only store good experiences
-            total_reward = 0
-            # if len(self.current_replay) <= 30:
-            for i, (s, a, r, ns, d) in enumerate(self.current_replay):
-                total_reward += r
-                self.replay_buffer.append(
-                    (
-                        state2array(s, a),
-                        a,
-                        reward + r,
+                for i, (s, a, r, d) in enumerate(self.current_replay):
+                    total_reward = max(total_reward, r)
+                    if i == len(self.current_replay) - 1:
+                        break
+                    self.replay_buffer.add(
                         (
-                            deepcopy(
-                                self.current_replay[i + 1][0]
-                                if i + 1 < len(self.current_replay)
-                                else None
-                            )
-                        ),
-                        len(ns["cards"]) == 0,
+                            state2array(s, a),
+                            a,
+                            reward + r,
+                            deepcopy(self.current_replay[i + 1][0]),
+                        )
                     )
-                )
-            print(f"total reward: {total_reward:0.2f}")
+
+                total_reward += reward
+
+                logger.info(f"total reward: {total_reward:0.2f}")
             self.current_replay = []
 
     def update_target_model(self):
@@ -212,27 +285,32 @@ class ZhengZeroPlayer(BasePlayer):
 
     def save_model(self):
         if self.model_path is None:
-            print("Model path not specified. Model not saved.")
+            logger.info("Model path not specified. Model not saved.")
             return
 
         torch.save(self.model.state_dict(), self.model_path)
 
-    def replay(self, batch_size, replay_num, episode):
-        if len(self.replay_buffer) < batch_size * replay_num * 2:
+    def load_model(self):
+        if self.model_path:
+            if os.path.exists(self.model_path):
+                self.model.load_state_dict(torch.load(self.model_path))
+                self.target_model.load_state_dict(torch.load(self.model_path))
+
+    def replay(self, batch_size, episode):
+        if self.params["train"] is False:
             return
-        if episode % 100 == 0:
-            print("model updated")
-            self.update_target_model()
-            self.save_model()
+        if len(self.replay_buffer) < batch_size * self.params["replay_num"] * 2:
+            return
 
         total_loss = 0
 
-        for _ in range(replay_num):
-            mini_batch = random.sample(self.replay_buffer, batch_size)
+        for _ in range(self.params["replay_num"]):
+            mini_batch, indices, is_weights = self.replay_buffer.sample(batch_size)
+            is_weights = torch.tensor(is_weights, dtype=torch.float32).to(device)
 
-            batch_state, _, batch_reward, batch_next_state_full, done = zip(*mini_batch)
+            batch_state, _, batch_reward, batch_next_state_full = zip(*mini_batch)
 
-            batch_state = np.array([s for s, _, _, _, _ in mini_batch])
+            batch_state = np.array([s for s, _, _, _ in mini_batch])
             batch_state = torch.tensor(batch_state, dtype=torch.float32).to(device)
             batch_reward = (
                 torch.tensor(batch_reward, dtype=torch.float32).to(device).unsqueeze(1)
@@ -242,26 +320,30 @@ class ZhengZeroPlayer(BasePlayer):
             ).to(device)
 
             for i, next_state in enumerate(batch_next_state_full):
-                if not done[i]:
-                    valid_moves = self._get_valid_moves(next_state)
+                valid_moves = self._get_valid_moves(next_state)
 
-                    next_state_tensor = np.array(
-                        [state2array(next_state, move) for move in valid_moves]
-                    )
+                next_state_tensor = np.array(
+                    [state2array(next_state, move) for move in valid_moves]
+                )
 
-                    next_state_tensor = torch.tensor(
-                        next_state_tensor, dtype=torch.float32
-                    ).to(device)
+                next_state_tensor = torch.tensor(
+                    next_state_tensor, dtype=torch.float32
+                ).to(device)
 
-                    with torch.no_grad():
-                        q_values = self.target_model(next_state_tensor)
+                with torch.no_grad():
+                    q_values = self.target_model(next_state_tensor)
 
-                    batch_next_state[i] = torch.max(q_values.squeeze(1))
+                batch_next_state[i] = torch.max(q_values.squeeze(1))
 
             predicted = self.model(batch_state)
             target = batch_reward + self.params["gamma"] * batch_next_state
 
-            loss = nn.MSELoss()(predicted, target)
+            td_error = torch.abs(predicted - target).cpu().detach().numpy()
+
+            for i in range(batch_size):
+                self.replay_buffer.update(indices[i], td_error[i])
+
+            loss = (is_weights * (predicted - target) ** 2).mean()
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
@@ -270,6 +352,12 @@ class ZhengZeroPlayer(BasePlayer):
 
         if self.params["epsilon"] > self.params["epsilon_min"]:
             self.params["epsilon"] *= self.params["epsilon_decay"]
+
+        if episode % self.params["update_length"] == 0:
+            logger.info("model updated")
+            self.update_target_model()
+            if self.params["save_model"]:
+                self.save_model()
 
 
 def state2array(info, move):

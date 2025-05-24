@@ -1,3 +1,32 @@
+import logging
+from rich.logging import RichHandler
+from rich import print
+import os
+import time
+
+
+def create_logger(name):
+    logging.basicConfig(
+        level="INFO",
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            RichHandler(rich_tracebacks=True),
+            (
+                logging.FileHandler(
+                    os.path.join(
+                        "ZhengShangYou/zhengzero/logs",
+                        f"zhengzero_{int(time.time())}.log",
+                    ),
+                    mode="a",
+                )
+            ),
+        ],
+    )
+
+    return logging.getLogger(name)
+
+
 CARDS = {
     "3": 0,
     "4": 1,
@@ -30,13 +59,12 @@ def _print_cards(cards, player=""):
     Print the hand of cards.
     :param cards: The hand of cards
     """
-    print(f"{player}: ", end="")
     if len(cards) == 0:
-        print("(pass)")
+        print(f"{player}: (pass)")
         return
-    for card in cards:
-        print(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}", end=", ")
-    print()
+    print(
+        f"{player}: {[f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}" for card in cards]}"
+    )
 
 
 def _print_card(card):

@@ -29,3 +29,7 @@ current model uses 224 inputs and one output (q value):
 current model gets 1st/2nd ~70-80% and loses < 10% of the time against greedy random players (weighted by length of the valid hands played)
 
 tested to around 20000 episodes out of 100000
+
+# References
+
+- https://arxiv.org/abs/2106.06135

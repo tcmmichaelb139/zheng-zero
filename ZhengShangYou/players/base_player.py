@@ -16,8 +16,8 @@ class BasePlayer:
         :return: The card to be played
         """
 
-        selected_move, add_info = self._play(info)
-        return selected_move, add_info
+        selected_move = self._play(info)
+        return selected_move
 
     def _play(self, info):
         """
@@ -27,7 +27,7 @@ class BasePlayer:
         """
         raise NotImplementedError("This method should be overridden by subclasses")
 
-    def remember(self, state, action, reward, next_state, done):
+    def remember(self, state, action, reward, done):
         """
         Store the experience in a replay buffer.
         :param state: The current state
@@ -76,13 +76,13 @@ class BasePlayer:
             selected_move = valid_moves[1]
         elif len(valid_moves) > 2:
             # selected_move = valid_moves[1]
-            # selected_move = valid_moves[np.random.choice(len(valid_moves), 1)[0]]
-            move_chances = [len(move) for move in valid_moves]
+            selected_move = valid_moves[np.random.choice(len(valid_moves), 1)[0]]
+            # move_chances = [len(move) for move in valid_moves]
 
-            move_chances = np.exp(move_chances) / np.sum(np.exp(move_chances))
+            # move_chances = np.exp(move_chances) / np.sum(np.exp(move_chances))
 
-            selected_move = valid_moves[
-                np.random.choice(len(valid_moves), p=move_chances)
-            ]
+            # selected_move = valid_moves[
+            #     np.random.choice(len(valid_moves), p=move_chances)
+            # ]
 
         return selected_move

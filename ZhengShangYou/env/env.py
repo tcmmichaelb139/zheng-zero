@@ -129,17 +129,23 @@ class Env:
 
         if self.params["log"]:
             _print_cards(move, self.players[self.current_player].player_id)
+            _print_cards(self.players[self.current_player].cards, "hand")
 
         if move != []:
             self.trick = detect_move(move)
             self.last_played_cards = move
-            self.round_passed[self.current_player] = False
+            self.round_passed = np.array([False] * len(self.players))
             self.trick_leader = self.current_player
             self.current_trick = self.trick
         else:
             self.round_passed[self.current_player] = True
 
+        for m in move:
+            self.cards_played[card2int(m)] = 1
+
         self.players[self.current_player]._played_hand(move)
+
+        self.history.append(move)
 
         if not self._is_player_finished():
             self._players_played_out()
@@ -149,17 +155,18 @@ class Env:
         if self._is_round_over():
             self._new_round()
 
-    def post_step(self, move):
-        for m in move:
-            self.cards_played[card2int(m)] = 1
-
-        self.history.append(move)
-
     def _game_over(self):
         """
         Check if the game is over.
         :return: True if the game is over, False otherwise
         """
+
+        if (
+            len(self.results) == len(self.players) - 1
+            and self.current_player not in self.results
+        ):
+            self.results.append(self.current_player)
+
         return len(self.results) == len(self.players)
 
     def _deal_cards(self):
@@ -213,10 +220,9 @@ class Env:
         :return: True if the round is over, False otherwise
         """
 
-        return (
-            np.sum(self.round_passed) == len(self.players) - 1
-            and self.current_player == self.trick_leader
-        )
+        # if np.sum(self.round_passed) >= len(self.players) - len(self.results) - 1:
+
+        return np.sum(self.round_passed) >= len(self.players) - len(self.results) - 1
 
     def _new_round(self):
         """
@@ -227,11 +233,17 @@ class Env:
         self.current_trick = None
         self.last_played_cards = None
 
+        if self.current_player in self.results:
+            self._next_player()
+
     def _next_player(self):
         """
         Move to the next player.
         """
+
         self.current_player = (self.current_player + 1) % len(self.players)
+        while self.current_player in self.results:
+            self.current_player = (self.current_player + 1) % len(self.players)
 
     def _players_played_out(self):
         """

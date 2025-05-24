@@ -10,4 +10,4 @@ class RandomPlayer(BasePlayer):
     def _play(self, info):
         # Randomly select a card from the player's hand
 
-        return self._random_move(info), {}
+        return self._random_move(info)

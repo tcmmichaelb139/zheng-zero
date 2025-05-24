@@ -13,63 +13,72 @@ class ZhengShangYou:
 
         self._env._deal_cards()
 
+        self.additional_rewards = [0.0] * len(self.players)
+
     def reset(self):
         self._env.reset()
 
         self._env._deal_cards()
 
+        self.additional_rewards = [0.0] * len(self.players)
+
         return self._get_obs()
 
-    def step(self, action, add_info={}):
+    def step(self, action):
         """
         Play a step of the game.
         :return: The game information
         """
 
-        current_player = self._current_player()
         results = self._env.results.copy()
-
         self.players[self._current_player()].set_action(action)
         self._env.step()
+
+        if self._env.results != results:
+            for i in range(len(self.players)):
+                self.additional_rewards[self._env.results[-1]] += 0.05 * len(
+                    self.players[i].cards
+                )
 
         obs = None
         reward = 0.0
         game_over = False
 
-        if current_player in self._env.results and results != self._env.results:
-            if self._env.results.index(current_player) == 0:
-                reward += 5.0
-            elif self._env.results.index(current_player) == 1:
-                reward += -5.0
-            elif self._env.results.index(current_player) == 2:
-                reward += -5.0
-            elif self._env.results.index(current_player) == 3:
-                reward += -5.0
-
-            for i in range(len(self.players)):
-                if current_player == i:
-                    continue
-
-                reward += 0.1 * len(self.players[i].cards)
-
-        if len(action) > 1:
-            reward += 0.3 * len(action)
-        if len(self._env.results) == 3 and self.players[current_player].cards != []:
-            reward -= 10.0
+        if action != []:
+            reward += 0.25
+        else:
+            reward += -0.25
 
         if self._game_over():
             game_over = True
         else:
             obs = self._get_obs(self._current_player())
 
-        self._env.post_step(action)
-
         return (
             obs,
             reward,
             game_over,
-            {"player_next_obs": self._get_obs(current_player)},
         )
+
+    def get_final_rewards(self):
+        """
+        Get the final rewards of the game.
+        :return: The final rewards
+        """
+        rewards = self.additional_rewards.copy()
+
+        for i in range(len(self.players)):
+            if i in self._env.results:
+                if self._env.results.index(i) == 0:
+                    rewards[i] += 2.0
+                elif self._env.results.index(i) == 1:
+                    rewards[i] += -2.0
+                elif self._env.results.index(i) == 2:
+                    rewards[i] += -2.0
+                elif self._env.results.index(i) == 3:
+                    rewards[i] += -2.0
+
+        return rewards
 
     def _get_obs(self, player_id=None):
         """

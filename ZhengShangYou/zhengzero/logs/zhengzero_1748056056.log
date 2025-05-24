@@ -1,0 +1,7 @@
+2025-05-23 23:07:36 - INFO - ##### Episode 1 #####
+2025-05-23 23:07:37 - ERROR - list index out of range
+Traceback (most recent call last):
+  File "/Users/tcmb139/programming/machine-learning/zheng-shang-you-ai/ZhengShangYou/zhengzero/zhengzero.py", line 98, in train_model
+    all_rewards[i].append(total_reward[i])
+    ~~~~~~~~~~~^^^
+IndexError: list index out of range
