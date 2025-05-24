@@ -22,15 +22,15 @@ if __name__ == "__main__":
         model_params={
             "lr": 0.00001,
             "gamma": 1,
-            "epsilon": 0.01,
-            "epsilon_min": 0.01,
+            "epsilon": 0.00,
+            "epsilon_min": 0.00,
             "epsilon_decay": 0.99,
             "update_length": 1000,
             "replay_num": 3,
             "train": False,
             "save_model": True,
         },
-        buffer_size=100000,
+        buffer_size=1000000,
     )
 
     player2 = ZhengZeroPlayer(
@@ -39,15 +39,15 @@ if __name__ == "__main__":
         model_params={
             "lr": 0.00001,
             "gamma": 0.99,
-            "epsilon": 1,
-            "epsilon_min": 0.01,
+            "epsilon": 0,
+            "epsilon_min": 0.00,
             "epsilon_decay": 0.99,
             "update_length": 1000,
             "replay_num": 3,
-            "train": True,
+            "train": False,
             "save_model": True,
         },
-        buffer_size=100000,
+        buffer_size=1000000,
     )
     player3 = RandomPlayer(player_id=2)
     player4 = RandomPlayer(player_id=3)
@@ -60,6 +60,6 @@ if __name__ == "__main__":
         batch_size=64,
         params={
             "train": True,
-            "log": False,
+            "log": True,
         },
     )
