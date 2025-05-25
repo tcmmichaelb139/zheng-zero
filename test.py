@@ -18,16 +18,16 @@ if __name__ == "__main__":
 
     player1 = ZhengZeroPlayer(
         player_id=0,
-        model_path="ZhengShangYou/zhengzero/models/zheng-zero-1.pth",
+        model_path="ZhengShangYou/zhengzero/models/zheng-zero-0.pth",
         model_params={
             "lr": 0.00001,
-            "gamma": 1,
-            "epsilon": 0.00,
-            "epsilon_min": 0.00,
+            "gamma": 0.97,
+            "epsilon": 1,
+            "epsilon_min": 0.1,
             "epsilon_decay": 0.99,
             "update_length": 1000,
             "replay_num": 3,
-            "train": False,
+            "train": True,
             "save_model": True,
         },
         buffer_size=1000000,
@@ -39,8 +39,24 @@ if __name__ == "__main__":
         model_params={
             "lr": 0.00001,
             "gamma": 0.99,
-            "epsilon": 0,
-            "epsilon_min": 0.00,
+            "epsilon": 0.01,
+            "epsilon_min": 0.01,
+            "epsilon_decay": 0.99,
+            "update_length": 1000,
+            "replay_num": 3,
+            "train": True,
+            "save_model": True,
+        },
+        buffer_size=1000000,
+    )
+    player3 = ZhengZeroPlayer(
+        player_id=2,
+        model_path="ZhengShangYou/zhengzero/models/zheng-zero-1.pth",
+        model_params={
+            "lr": 0.00001,
+            "gamma": 0.99,
+            "epsilon": 0.01,
+            "epsilon_min": 0.01,
             "epsilon_decay": 0.99,
             "update_length": 1000,
             "replay_num": 3,
@@ -49,17 +65,16 @@ if __name__ == "__main__":
         },
         buffer_size=1000000,
     )
-    player3 = RandomPlayer(player_id=2)
     player4 = RandomPlayer(player_id=3)
 
     players = [player1, player2, player3, player4]
 
     train_model(
         players,
-        [1],
+        [0, 1],
         batch_size=64,
         params={
             "train": True,
-            "log": True,
+            "log": False,
         },
     )
