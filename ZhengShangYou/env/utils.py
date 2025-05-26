@@ -128,3 +128,32 @@ def int2trick(trick):
         return "pass"
     else:
         return list(TRICKS.keys())[list(TRICKS.values()).index(trick)]
+
+
+def string2card(card_str):
+    card_str = card_str.strip()
+    card_str = card_str.split(" ")
+
+    if card_str[0] == "LJ" or card_str[0] == "HJ":
+        return (CARDS[card_str[0]], 0)
+
+    return (CARDS[card_str[0]], SUITS[card_str[1]])
+
+
+def input2cards(prompt):
+    while True:
+        try:
+            input_cards = input(prompt)
+
+            if input_cards == "":
+                return []
+
+            input_cards = input_cards.split(",")
+
+            input_cards = [string2card(card) for card in input_cards]
+
+            return input_cards
+
+        except Exception as e:
+            print("invalid input, please try again")
+            continue

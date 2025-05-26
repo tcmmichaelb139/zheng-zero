@@ -1,4 +1,5 @@
 from ZhengShangYou.env.env import Env
+from ZhengShangYou.env.utils import input2cards
 
 
 class ZhengShangYou:
@@ -11,14 +12,23 @@ class ZhengShangYou:
 
         self._env.reset()
 
-        self._env._deal_cards()
+        self.params = params
+        if self.params["sim"] is False:
+            self._env._deal_cards()
 
         self.additional_rewards = [0.0] * len(self.players)
 
     def reset(self):
         self._env.reset()
 
-        self._env._deal_cards()
+        if self.params["sim"] is False:
+            self._env._deal_cards()
+        else:
+            for player in self.params["zhengzeroplayers"]:
+                cards = input2cards(
+                    f"ZhengZero: Enter the starting hand (comma-separated): "
+                )
+                self.players[player]._deal_hand(cards)
 
         self.additional_rewards = [0.0] * len(self.players)
 
@@ -34,20 +44,18 @@ class ZhengShangYou:
         self.players[self._current_player()].set_action(action)
         self._env.step()
 
-        if self._env.results != results:
-            for i in range(len(self.players)):
-                self.additional_rewards[self._env.results[-1]] += 0.05 * len(
-                    self.players[i].cards
-                )
+        # if self._env.results != results:
+        #     for i in range(len(self.players)):
+        #         self.additional_rewards[self._env.results[-1]] += 0.05 * len(
+        #             self.players[i].cards
+        #         )
 
         obs = None
         reward = 0.0
         game_over = False
 
         if action != []:
-            reward += 0.25
-        else:
-            reward += -0.25
+            reward += 0.025 * len(action)
 
         if self._game_over():
             game_over = True
@@ -70,13 +78,7 @@ class ZhengShangYou:
         for i in range(len(self.players)):
             if i in self._env.results:
                 if self._env.results.index(i) == 0:
-                    rewards[i] += 2.0
-                elif self._env.results.index(i) == 1:
-                    rewards[i] += -2.0
-                elif self._env.results.index(i) == 2:
-                    rewards[i] += -2.0
-                elif self._env.results.index(i) == 3:
-                    rewards[i] += -2.0
+                    rewards[i] += 0.65
 
         return rewards
 

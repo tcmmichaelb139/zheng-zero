@@ -71,13 +71,18 @@ class BasePlayer:
 
         selected_move = valid_moves[0]
 
-        if len(valid_moves) == 2:
-            # print("Two valid moves")
-            selected_move = valid_moves[1]
-        elif len(valid_moves) > 2:
-            # selected_move = valid_moves[1]
-            # selected_move = valid_moves[np.random.choice(len(valid_moves), 1)[0]]
-            move_chances = [len(move) for move in valid_moves]
+        if len(valid_moves) >= 2:
+            move_chances = [1.0 for _ in valid_moves]
+
+            length = 0
+            num = 0
+            for i in range(len(move_chances)):
+                if len(valid_moves[i]) != length:
+                    move_chances[i - 1] = length
+                    length = len(valid_moves[i])
+                    num = 0
+
+                move_chances[i] = length * np.power(0.9, num)
 
             move_chances = np.exp(move_chances) / np.sum(np.exp(move_chances))
 

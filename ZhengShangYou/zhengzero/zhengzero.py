@@ -149,40 +149,41 @@ class ReplayBuffer:
         self.buffer_size = buffer_size
         self.alpha = alpha
         self.beta = beta
+        self.beta_increment = 0.001
         self.epsilon = epsilon
 
     def add(self, experience):
-        max_p = self.sumtree.max_priority
+        max_p = self.sumtree.get_max
         self.sumtree.add(max_p, experience)
 
     def sample(self, batch_size):
         batch = []
-        indices = []
-        is_weights = []
+        idxs = []
+        segment = self.sumtree.total / batch_size
+        priorities = []
 
-        segment = self.sumtree.total_priority / batch_size
+        self.beta = np.min([1.0, self.beta + self.beta_increment])
 
         for i in range(batch_size):
             a = segment * i
             b = segment * (i + 1)
-            value = np.random.uniform(a, b)
-            index, priority, data = self.sumtree.get_leaf(value)
 
-            sampling_prob = priority / self.sumtree.total_priority
-            weight = (self.sumtree.size * sampling_prob) ** (-self.beta)
-
+            s = random.uniform(a, b)
+            (idx, p, data) = self.sumtree.get(s)
+            priorities.append(p)
             batch.append(data)
-            indices.append(index)
-            is_weights.append(weight)
+            idxs.append(idx)
 
-        is_weights /= np.max(is_weights)
+        sampling_probabilities = priorities / self.sumtree.total
+        is_weight = np.power(self.sumtree.size * sampling_probabilities, -self.beta)
+        is_weight /= is_weight.max()
 
-        return batch, indices, is_weights
+        return batch, idxs, is_weight
 
-    def update(self, indices, td_errors):
+    def update(self, idx, td_errors):
         new_priorities = (np.abs(td_errors) + self.epsilon) ** self.alpha
 
-        self.sumtree.update(indices, new_priorities)
+        self.sumtree.update(idx, new_priorities)
 
     def __len__(self):
         return self.sumtree.size
@@ -200,7 +201,7 @@ class ZhengZeroPlayer(BasePlayer):
         self.load_model()
 
         self.params = model_params
-        self.optimizer = torch.optim.RMSprop(
+        self.optimizer = torch.optim.Adam(
             self.model.parameters(),
             lr=self.params["lr"],
         )
@@ -209,7 +210,9 @@ class ZhengZeroPlayer(BasePlayer):
 
         self.consec_passes = 0
 
-        self.replay_buffer = ReplayBuffer(buffer_size, alpha=0.6, beta=0.4)
+        self.replay_buffer = ReplayBuffer(
+            buffer_size, alpha=0.6, beta=0.4, epsilon=0.00001
+        )
         self.buffer_size = buffer_size
         self.current_replay = []
 
