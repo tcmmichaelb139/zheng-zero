@@ -144,49 +144,23 @@ def train_model(
 
 
 class ReplayBuffer:
-    def __init__(self, buffer_size, alpha=0.1, beta=0.1, epsilon=0.01):
-        self.sumtree = SumTree(buffer_size)
-        self.buffer_size = buffer_size
-        self.alpha = alpha
-        self.beta = beta
-        self.beta_increment = 0.001
-        self.epsilon = epsilon
+    def __init__(self, buffer_size):
+        self.buffer = deque(maxlen=buffer_size)
 
     def add(self, experience):
-        max_p = self.sumtree.get_max
-        self.sumtree.add(max_p, experience)
+        self.buffer.append(experience)
 
     def sample(self, batch_size):
-        batch = []
-        idxs = []
-        segment = self.sumtree.total / batch_size
-        priorities = []
+        if len(self.buffer) < batch_size:
+            return [], [], []
 
-        self.beta = np.min([1.0, self.beta + self.beta_increment])
+        indices = random.sample(range(len(self.buffer)), batch_size)
+        mini_batch = [self.buffer[i] for i in indices]
 
-        for i in range(batch_size):
-            a = segment * i
-            b = segment * (i + 1)
-
-            s = random.uniform(a, b)
-            (idx, p, data) = self.sumtree.get(s)
-            priorities.append(p)
-            batch.append(data)
-            idxs.append(idx)
-
-        sampling_probabilities = priorities / self.sumtree.total
-        is_weight = np.power(self.sumtree.size * sampling_probabilities, -self.beta)
-        is_weight /= is_weight.max()
-
-        return batch, idxs, is_weight
-
-    def update(self, idx, td_errors):
-        new_priorities = (np.abs(td_errors) + self.epsilon) ** self.alpha
-
-        self.sumtree.update(idx, new_priorities)
+        return mini_batch
 
     def __len__(self):
-        return self.sumtree.size
+        return self.buffer.__len__()
 
 
 class ZhengZeroPlayer(BasePlayer):
@@ -210,9 +184,7 @@ class ZhengZeroPlayer(BasePlayer):
 
         self.consec_passes = 0
 
-        self.replay_buffer = ReplayBuffer(
-            buffer_size, alpha=0.6, beta=0.4, epsilon=0.00001
-        )
+        self.replay_buffer = ReplayBuffer(buffer_size)
         self.buffer_size = buffer_size
         self.current_replay = []
 
@@ -308,8 +280,7 @@ class ZhengZeroPlayer(BasePlayer):
         total_loss = 0
 
         for _ in range(self.params["replay_num"]):
-            mini_batch, indices, is_weights = self.replay_buffer.sample(batch_size)
-            is_weights = torch.tensor(is_weights, dtype=torch.float32).to(device)
+            mini_batch = self.replay_buffer.sample(batch_size)
 
             batch_state, _, batch_reward, batch_next_state_full = zip(*mini_batch)
 
@@ -343,10 +314,7 @@ class ZhengZeroPlayer(BasePlayer):
 
             td_error = torch.abs(predicted - target).cpu().detach().numpy()
 
-            for i in range(batch_size):
-                self.replay_buffer.update(indices[i], td_error[i])
-
-            loss = (is_weights * (predicted - target) ** 2).mean()
+            loss = nn.MSELoss()(predicted, target)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
