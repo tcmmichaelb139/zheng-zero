@@ -17,6 +17,8 @@ logger = create_logger(__name__)
 
 
 def save_rewards(all_rewards):
+    plt.figure()
+
     def moving_stat(data, window_size):
         if len(data) < window_size:
             return np.array([np.mean(data)]), np.array(
@@ -74,6 +76,8 @@ def save_rewards(all_rewards):
 def save_skills(skills):
     if len(skills) == 0:
         return
+
+    plt.figure()
 
     sns.lineplot(x=np.arange(len(skills)), y=skills, label="Player Skill")
     plt.xlabel("Episodes")
@@ -185,12 +189,13 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
     opponent_pool = []
 
     rewards = []
-    skill = []
+    skills = []
 
     try:
-        opp = player.clone()
-        opp.train = False
-        opponent_pool.append(opp)
+        for _ in range(3):
+            opp = player.clone()
+            opp.params["train"] = False
+            opponent_pool.append(opp)
 
         episode = 1
 
@@ -201,8 +206,12 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
             logger.info(f"##### Self-play Episode {episode} #####")
 
             players = [player]
+            chosen = []
             for i in range(3):
                 idx = np.random.choice(len(opponent_pool))
+                while idx in chosen:
+                    idx = np.random.choice(len(opponent_pool))
+                chosen.append(idx)
                 opp = opponent_pool[idx]
                 opp.player_id = i + 1
                 players.append(opp)
@@ -240,14 +249,14 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
             # update player ratings using TrueSkill
             results = env._env.results
             ranks = [0] * 4
-            for i, player in enumerate(results):
-                ranks[player] = i
+            for i, p in enumerate(results):
+                ranks[p] = i
 
             rating_group = [(players[i].rating,) for i in range(len(players))]
             new_ratings = ts.rate(rating_group, ranks)
 
-            for i, player in enumerate(players):
-                player.rating = new_ratings[i][0]
+            for i, p in enumerate(players):
+                p.rating = new_ratings[i][0]
 
             if episode % 100 == 0:
                 for i in range(4):
@@ -266,14 +275,14 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
 
                 win_count_100 = np.zeros((4), dtype=int)
 
-                skill.append(player.rating.mu)
+                skills.append(player.rating.mu)
                 logger.info(f"Player skill (TrueSkill Mu): {player.rating.mu}")
 
             if episode % update_length == 0:
                 logger.info("Updating opponent pool...")
 
                 new_opponent = player.clone(episode)
-                new_opponent.train = False
+                new_opponent.params["train"] = False
 
                 if len(opponent_pool) < pool_size:
                     opponent_pool.append(new_opponent)
@@ -286,7 +295,7 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
 
     except KeyboardInterrupt:
         save_rewards([rewards])
-        save_skills(skill)
+        save_skills(skills)
 
         logger.info("Top opponent pool:")
 

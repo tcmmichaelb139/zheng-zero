@@ -10,7 +10,7 @@ if __name__ == "__main__":
             "gamma": 0.99,
             "epsilon": 1,
             "epsilon_min": 0.1,
-            "epsilon_decay": 0.99999,
+            "epsilon_decay": 0.999,
             "update_length": 1000,
             "replay_num": 3,
             "train": True,

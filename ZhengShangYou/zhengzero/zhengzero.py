@@ -266,12 +266,16 @@ class ZhengZeroPlayer(BasePlayer):
         Create a clone of the current player without copying replay buffer.
         :return: A new instance of ZhengZeroPlayer with the same parameters
         """
-        player = ZhengZeroPlayer(
-            player_id=self.player_id,
-            player_name=episode,
-            model_path=None,
-            model_params=self.params,
-            buffer_size=self.buffer_size,
+        player = deepcopy(
+            ZhengZeroPlayer(
+                player_id=self.player_id,
+                player_name=(
+                    f"Player-{episode}" if episode is not None else self.player_name
+                ),
+                model_path=None,
+                model_params=self.params,
+                buffer_size=self.buffer_size,
+            )
         )
 
         player.model.load_state_dict(self.model.state_dict())
