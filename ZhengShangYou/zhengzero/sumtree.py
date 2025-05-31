@@ -8,7 +8,7 @@ class SumTree:
 
     def __init__(self, capacity):
         self.capacity = capacity
-        self.tree = np.zeros(2 * capacity - 1, dtype=np.float32)
+        self.tree = np.zeros(2 * capacity - 1, dtype=np.float64)
         self.data = np.zeros(capacity, dtype=object)
         self.size = 0
 
@@ -28,8 +28,6 @@ class SumTree:
 
         if left >= len(self.tree):
             return idx
-
-        print(s)
 
         if s <= self.tree[left]:
             return self._retrieve(left, s)
@@ -62,11 +60,8 @@ class SumTree:
         idx = self._retrieve(0, s)
         dataIdx = idx - self.capacity + 1
         if dataIdx >= self.size:
-            print("uhhh")
-            print(s)
-            print(self.total)
-            print(dataIdx, self.size)
-            # dataIdx = self.size - 1
+            # when the value s is very close to the total
+            dataIdx = self.size - 1
 
         return idx, self.tree[idx], self.data[dataIdx]
 

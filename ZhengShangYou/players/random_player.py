@@ -4,8 +4,8 @@ import numpy as np
 
 
 class RandomPlayer(BasePlayer):
-    def __init__(self, player_id: int):
-        super().__init__(player_id)
+    def __init__(self, player_id: int, player_name: str = None):
+        super().__init__(player_id, player_name)
 
     def _play(self, info):
         # Randomly select a card from the player's hand

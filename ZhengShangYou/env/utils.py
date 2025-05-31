@@ -1,3 +1,4 @@
+from vars import GLOBAL_LOG_FOLDER
 import logging
 from rich.logging import RichHandler
 from rich import print
@@ -15,8 +16,8 @@ def create_logger(name):
             (
                 logging.FileHandler(
                     os.path.join(
-                        "ZhengShangYou/zhengzero/logs",
-                        f"zhengzero_{int(time.time())}.log",
+                        GLOBAL_LOG_FOLDER,
+                        f"zhengzero.log",
                     ),
                     mode="a",
                 )
@@ -53,6 +54,8 @@ SUITS = {
 REVERSE_CARDS = {v: k for k, v in CARDS.items()}
 REVERSE_SUITS = {v: k for k, v in SUITS.items()}
 
+logger = create_logger(__name__)
+
 
 def _print_cards(cards, player=""):
     """
@@ -60,9 +63,9 @@ def _print_cards(cards, player=""):
     :param cards: The hand of cards
     """
     if len(cards) == 0:
-        print(f"{player}: (pass)")
+        logger.info(f"{player}: (pass)")
         return
-    print(
+    logger.info(
         f"{player}: {[f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}" for card in cards]}"
     )
 
@@ -72,7 +75,7 @@ def _print_card(card):
     Print the card.
     :param card: The card to be printed
     """
-    print(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}")
+    logger.info(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}")
 
 
 def card2int(card):
@@ -112,7 +115,8 @@ def trick2int(trick):
     :param trick: The trick to be converted
     :return: The trick as an integer
     """
-    if trick == "pass" or trick is None:
+
+    if trick is None:
         return 0
     else:
         return TRICKS[trick]
@@ -125,7 +129,7 @@ def int2trick(trick):
     :return: The trick as an integer
     """
     if trick == 0:
-        return "pass"
+        return None
     else:
         return list(TRICKS.keys())[list(TRICKS.values()).index(trick)]
 

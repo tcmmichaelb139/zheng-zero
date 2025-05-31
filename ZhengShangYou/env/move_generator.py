@@ -185,7 +185,7 @@ class MoveGenerator:
         Generate all possible straight moves.
         :return: A list of possible straight moves
         """
-        moves = [[]]
+        moves = []
         moves.extend(self.generate_single_card_moves())
         moves.extend(self.generate_pair_card_moves())
         moves.extend(self.generate_triple_card_moves())
@@ -203,7 +203,7 @@ class MoveGenerator:
         :return: A list of possible moves
         """
 
-        if trick is None or trick == "pass":
+        if trick is None:
             return self.generate_all_moves()
 
         l = len(last_played_cards)

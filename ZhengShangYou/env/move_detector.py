@@ -8,7 +8,7 @@ def detect_move(move):
     :return: The move type
     """
     if len(move) == 0:
-        return "pass"
+        return None
     elif len(move) == 1:
         return "single"
     elif len(move) == 2:

@@ -143,11 +143,7 @@ class Env:
         for m in move:
             self.cards_played[card2int(m)] = 1
 
-        if (
-            self.params["sim"] is False
-            or self.current_player in self.params["zhengzeroplayers"]
-        ):
-            self.players[self.current_player]._played_hand(move)
+        self.players[self.current_player]._played_hand(move)
 
         self.history.append(move)
 
@@ -254,17 +250,8 @@ class Env:
         Check if the player has played out.
         :return: True if the player has played out, False otherwise
         """
-        if self.params["sim"] is False:
-            if len(self.players[self.current_player].cards) == 0:
-                self.results.append(self.current_player)
-
-        if (
-            self.params["sim"]
-            and self.current_player not in self.params["zhengzeroplayers"]
-        ):
-            out = input(f"Player {self.current_player} played out [y/N]: ")
-            if out.lower() == "y":
-                self.results.append(self.current_player)
+        if len(self.players[self.current_player].cards) == 0:
+            self.results.append(self.current_player)
 
     def _is_player_finished(self):
         """
