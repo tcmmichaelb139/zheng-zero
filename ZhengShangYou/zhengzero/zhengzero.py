@@ -197,6 +197,8 @@ class ZhengZeroPlayer(BasePlayer):
                 )
 
         self.model.eval()
+        self.model.to(device)
+        self.target_model.to(device)
 
     def replay(self, batch_size, episode):
         if self.params["train"] is False:
@@ -208,6 +210,7 @@ class ZhengZeroPlayer(BasePlayer):
 
         for _ in range(self.params["replay_num"]):
             mini_batch, indices, weights = self.replay_buffer.sample(batch_size)
+
             weights = torch.tensor(weights, dtype=torch.float32).to(device)
 
             batch_state, _, batch_reward, batch_next_state_full = zip(*mini_batch)
@@ -221,21 +224,29 @@ class ZhengZeroPlayer(BasePlayer):
                 [[0.0]] * len(batch_state), dtype=torch.float32
             ).to(device)
 
-            for i, next_state in enumerate(batch_next_state_full):
-                valid_moves = self._get_valid_moves(next_state)
+            all_next_state_tensors = []
+            split_sizes = []
 
+            for next_state in batch_next_state_full:
+                valid_moves = self._get_valid_moves(next_state)
                 next_state_tensor = np.array(
                     [state2array(next_state, move) for move in valid_moves]
                 )
+                all_next_state_tensors.append(next_state_tensor)
+                split_sizes.append(len(valid_moves))
 
-                next_state_tensor = torch.tensor(
-                    next_state_tensor, dtype=torch.float32
+            if all_next_state_tensors:
+                all_next_state_tensor = np.concatenate(all_next_state_tensors, axis=0)
+                all_next_state_tensor = torch.tensor(
+                    all_next_state_tensor, dtype=torch.float32
                 ).to(device)
 
                 with torch.no_grad():
-                    q_values = self.target_model(next_state_tensor)
+                    q_values = self.target_model(all_next_state_tensor).squeeze(1)
 
-                batch_next_state[i] = torch.max(q_values.squeeze(1))
+                q_values_split = torch.split(q_values, split_sizes)
+                for i, q in enumerate(q_values_split):
+                    batch_next_state[i] = torch.max(q)
 
             predicted = self.model(batch_state)
             target = batch_reward + self.params["gamma"] * batch_next_state
