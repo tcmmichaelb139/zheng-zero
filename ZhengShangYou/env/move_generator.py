@@ -73,7 +73,7 @@ class MoveGenerator:
         self.triple_card_moves = []
         for i in range(0, len(CARDS) - 1):
             if len(self.cards_value_dict[i]) >= 3:
-                for combination in itertools.combinations(self.cards_value_dict[i], 2):
+                for combination in itertools.combinations(self.cards_value_dict[i], 3):
                     self.triple_card_moves.append(list(combination))
         return self.triple_card_moves
 

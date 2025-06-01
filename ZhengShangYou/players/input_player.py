@@ -15,3 +15,6 @@ class InputPlayer(BasePlayer):
                 return cards
             else:
                 print("Invalid move. Please try again.")
+    
+    def _get_input_cards(self):
+        return input2cards(f"{self.player_name} ({self.player_id})'s turn: ")
