@@ -16,6 +16,7 @@ import torch.nn as nn
 import numpy as np
 import random
 from copy import deepcopy
+import time
 
 from trueskill import Rating
 
@@ -229,17 +230,19 @@ class ZhengZeroPlayer(BasePlayer):
 
             for next_state in batch_next_state_full:
                 valid_moves = self._get_valid_moves(next_state)
-                next_state_tensor = np.array(
+                next_state_array = np.array(
                     [state2array(next_state, move) for move in valid_moves]
                 )
+                next_state_tensor = torch.tensor(
+                    next_state_array, dtype=torch.float32
+                ).to(device)
                 all_next_state_tensors.append(next_state_tensor)
                 split_sizes.append(len(valid_moves))
 
             if all_next_state_tensors:
-                all_next_state_tensor = np.concatenate(all_next_state_tensors, axis=0)
-                all_next_state_tensor = torch.tensor(
-                    all_next_state_tensor, dtype=torch.float32
-                ).to(device)
+                all_next_state_tensor = torch.cat(all_next_state_tensors, dim=0).to(
+                    device
+                )
 
                 with torch.no_grad():
                     q_values = self.target_model(all_next_state_tensor).squeeze(1)

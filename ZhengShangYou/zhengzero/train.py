@@ -5,6 +5,7 @@ from ZhengShangYou.env.utils import (
     create_logger,
 )
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -300,7 +301,16 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
         logger.info("Top opponent pool:")
 
         opponent_pool.sort(key=lambda x: x.rating.mu, reverse=True)
+
+        top_opponent_dir = GLOBAL_LOG_FOLDER + "/top_opponent_pool/"
+
+        os.makedirs(top_opponent_dir, exist_ok=True)
+
         for i, opp in enumerate(opponent_pool):
             logger.info(f"Opponent {i}: {opp.player_name}, Skill: {opp.rating.mu}")
+
+            opp.model_dir = top_opponent_dir
+            opp.save_model(f"{i}_{opp.player_name}")
+
     except Exception as e:
         logger.exception(e)
