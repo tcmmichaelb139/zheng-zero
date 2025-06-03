@@ -71,9 +71,6 @@ class BasePlayer:
     def _random_move(self, info):
         # Randomly select a card from the player's hand
 
-        trick = info["trick"]
-        last_played_cards = info["last_played_cards"]
-
         valid_moves = self._get_valid_moves(info)
 
         assert len(valid_moves) > 0, "Should have at least one valid move"
@@ -83,21 +80,9 @@ class BasePlayer:
 
         selected_move = valid_moves[0]
 
-        if len(valid_moves) >= 2:
-            # selected_move = valid_moves[np.random.choice(len(valid_moves))]
-
-            # move_chances = [1.0 for _ in valid_moves]
-
-            # length = 0
-            # num = 0
-            # for i in range(len(move_chances)):
-            #     if len(valid_moves[i]) != length:
-            #         move_chances[i - 1] = 1.0
-            #         length = len(valid_moves[i])
-            #         num = 0
-
-            #     move_chances[i] = np.power(0.9, num)
-
+        if len(info["cards"]) == 1:
+            selected_move = valid_moves[0]
+        elif len(valid_moves) >= 2:
             move_chances = [len(move) for move in valid_moves]
 
             move_chances = np.exp(move_chances) / np.sum(np.exp(move_chances))

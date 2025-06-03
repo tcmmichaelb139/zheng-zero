@@ -103,6 +103,8 @@ class Env:
         self.history = []
         self.params = params
 
+        self.out = 0  # fix issue when player is out and who is the next player
+
     def reset(self):
         for player in self.players:
             player.reset()
@@ -118,6 +120,8 @@ class Env:
 
         self.cards_played = [0] * 54
         self.history = []
+
+        self.out = 0
 
     def step(self):
         """
@@ -137,6 +141,7 @@ class Env:
             self.round_passed = np.array([False] * len(self.players))
             self.trick_leader = self.current_player
             self.current_trick = self.trick
+            self.out = 0
         else:
             self.round_passed[self.current_player] = True
 
@@ -220,9 +225,10 @@ class Env:
         :return: True if the round is over, False otherwise
         """
 
-        # if np.sum(self.round_passed) >= len(self.players) - len(self.results) - 1:
-
-        return np.sum(self.round_passed) >= len(self.players) - len(self.results) - 1
+        return (
+            np.sum(self.round_passed)
+            >= len(self.players) - len(self.results) - 1 + self.out
+        )
 
     def _new_round(self):
         """
@@ -232,6 +238,7 @@ class Env:
         self.round_passed = np.array([False] * len(self.players))
         self.current_trick = None
         self.last_played_cards = None
+        self.out = 0
 
         if self.current_player in self.results:
             self._next_player()
@@ -252,6 +259,7 @@ class Env:
         """
         if len(self.players[self.current_player].cards) == 0:
             self.results.append(self.current_player)
+            self.out += 1
 
     def _is_player_finished(self):
         """
