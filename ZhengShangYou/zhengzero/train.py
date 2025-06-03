@@ -204,8 +204,6 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
         win_count_100 = np.zeros((4), dtype=int)
 
         while True:
-            logger.info(f"##### Self-play Episode {episode} #####")
-
             players = [player]
             chosen = []
             for i in range(3):
@@ -260,6 +258,8 @@ def self_play(player, pool_size=10, batch_size=100, update_length=1000):
                 p.rating = new_ratings[i][0]
 
             if episode % 100 == 0:
+                logger.info(f"##### Self-play Episode {episode} #####")
+
                 for i in range(4):
                     win_count[i] += win_count_100[i]
 

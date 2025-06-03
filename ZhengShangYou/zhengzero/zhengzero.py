@@ -174,7 +174,7 @@ class ZhengZeroPlayer(BasePlayer):
 
                 total_reward += reward
 
-                logger.info(f"total reward: {total_reward:0.2f}")
+                # logger.info(f"total reward: {total_reward:0.2f}")
             self.current_replay = []
 
     def update_target_model(self):
