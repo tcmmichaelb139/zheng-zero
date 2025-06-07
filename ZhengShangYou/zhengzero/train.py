@@ -9,8 +9,6 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from collections import deque
-from copy import deepcopy
 
 import trueskill
 
@@ -103,9 +101,6 @@ def train_model(
     """
     Train the model with the given parameters.
     useful when training against random and algorithmic bots
-    :param players: The players to be trained
-    :param batch_size: The batch size
-    :param num_episodes: The number of episodes to train
     """
 
     episode = 1
@@ -182,7 +177,6 @@ def train_model(
 def self_play(player, pool_size=10, batch_size=100, update_length=1000):
     """
     Self-play training for the player
-    :param player: The player to be trained
     """
 
     ts = trueskill.TrueSkill(draw_probability=0.0)

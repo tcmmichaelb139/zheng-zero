@@ -11,7 +11,8 @@ logger = create_logger(__name__)
 
 
 def print_table(rich_table):
-    """Generate an ascii formatted presentation of a Rich table
+    """
+    Generate an ascii formatted presentation of a Rich table
     Eliminates any column styling
     """
     console = Console(width=150)
@@ -27,9 +28,6 @@ def sim_model(
 ):
     """
     Simulate a game with the given players.
-    :param players: The players to be simulated
-    :param num_episodes: The number of episodes to be simulated
-    :param log: Whether to log the results
     """
 
     win_count = np.zeros((4, 4), dtype=int)
@@ -67,6 +65,9 @@ def sim_1_game(
     players,
     log=True,
 ):
+    """
+    Simulates one game
+    """
 
     env = ZhengShangYou(
         players,

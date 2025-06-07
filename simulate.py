@@ -8,18 +8,7 @@ if __name__ == "__main__":
     players = [
         ZhengZeroPlayer(
             player_id=0,
-            model_path="ZhengShangYou/zhengzero/logs/2025-06-02_13-30-24/top_opponent_pool/zheng-zero-0_Player-1727000.pth",
-            model_params={
-                "epsilon": 0.0,
-                "epsilon_min": 0.0,
-                "epsilon_decay": 0.999,
-                "train": False,
-                "save_model": False,
-            },
-        ),
-        ZhengZeroPlayer(
-            player_id=1,
-            model_path="ZhengShangYou/zhengzero/logs/2025-06-02_13-30-24/top_opponent_pool/zheng-zero-24_Player-1727000.pth",
+            model_path="ZhengShangYou/zhengzero/logs/2025-06-03_20-05-54/models/0/zheng-zero-3870000.pth",
             model_params={
                 "epsilon": 0.0,
                 "epsilon_min": 0.0,
@@ -30,10 +19,21 @@ if __name__ == "__main__":
         ),
         ZhengZeroPlayer(
             player_id=2,
-            model_path="ZhengShangYou/zhengzero/logs/2025-06-02_13-30-24/top_opponent_pool/zheng-zero-0_Player-1727000.pth",
+            model_path="ZhengShangYou/zhengzero/logs/2025-06-03_20-05-54/models/0/zheng-zero-3870000.pth",
             model_params={
-                "epsilon": 1.0,
-                "epsilon_min": 1.0,
+                "epsilon": 0.0,
+                "epsilon_min": 0.0,
+                "epsilon_decay": 0.999,
+                "train": False,
+                "save_model": False,
+            },
+        ),
+        ZhengZeroPlayer(
+            player_id=2,
+            model_path="ZhengShangYou/zhengzero/logs/2025-06-03_20-05-54/models/0/zheng-zero-3870000.pth",
+            model_params={
+                "epsilon": 0.0,
+                "epsilon_min": 0.0,
                 "epsilon_decay": 0.999,
                 "train": False,
                 "save_model": False,

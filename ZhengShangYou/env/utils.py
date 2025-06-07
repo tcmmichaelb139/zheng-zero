@@ -60,7 +60,6 @@ logger = create_logger(__name__)
 def _print_cards(cards, player=""):
     """
     Print the hand of cards.
-    :param cards: The hand of cards
     """
     if len(cards) == 0:
         logger.info(f"{player}: (pass)")
@@ -73,7 +72,6 @@ def _print_cards(cards, player=""):
 def _print_card(card):
     """
     Print the card.
-    :param card: The card to be printed
     """
     logger.info(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}")
 
@@ -112,8 +110,6 @@ TRICKS = {
 def trick2int(trick):
     """
     Convert the trick to an integer.
-    :param trick: The trick to be converted
-    :return: The trick as an integer
     """
 
     if trick is None:
@@ -125,8 +121,6 @@ def trick2int(trick):
 def int2trick(trick):
     """
     Convert the trick to an integer.
-    :param trick: The trick to be converted
-    :return: The trick as an integer
     """
     if trick == 0:
         return None
@@ -135,6 +129,9 @@ def int2trick(trick):
 
 
 def string2card(card_str):
+    """
+    Convert a string representation of a card to a tuple (card, suit).
+    """
     card_str = card_str.strip()
     card_str = card_str.split(" ")
 
@@ -145,6 +142,9 @@ def string2card(card_str):
 
 
 def input2cards(prompt):
+    """
+    Prompt the user for a list of cards and return them as a list of tuples.
+    """
     while True:
         try:
             input_cards = input(prompt)
@@ -155,6 +155,9 @@ def input2cards(prompt):
             input_cards = input_cards.split(",")
 
             input_cards = [string2card(card) for card in input_cards]
+
+            # sort the cards to ensure consistent order
+            input_cards.sort(key=lambda x: (x[0], x[1]))  # sort by rank then suit
 
             return input_cards
 

@@ -29,7 +29,6 @@ class ZhengShangYou:
     def step(self, action):
         """
         Play a step of the game.
-        :return: The game information
         """
 
         self.players[self._current_player()].set_action(action)
@@ -39,6 +38,7 @@ class ZhengShangYou:
         reward = 0.0
         game_over = False
 
+        # incentivized to play a card
         if action != []:
             reward += 0.25
 
@@ -56,7 +56,6 @@ class ZhengShangYou:
     def get_final_rewards(self):
         """
         Get the final rewards of the game.
-        :return: The final rewards
         """
         rewards = self.additional_rewards.copy()
 
@@ -70,7 +69,6 @@ class ZhengShangYou:
     def _get_obs(self, player_id=None):
         """
         Get the current observation of the game.
-        :return: The game information
         """
 
         obs = self._env._get_info(player_id)
@@ -80,14 +78,12 @@ class ZhengShangYou:
     def _game_over(self):
         """
         Check if the game is over.
-        :return: True if the game is over, False otherwise
         """
         return self._env._game_over()
 
     def _current_player(self):
         """
         Get the current player.
-        :return: The current player
         """
         return self._env.current_player
 
@@ -119,7 +115,6 @@ class DummyPlayer:
     def _deal_hand(self, cards):
         """
         Deal cards to the player.
-        :param cards: The cards to be dealt
         """
         self.cards = cards
         self._sort_hand()
@@ -136,7 +131,6 @@ class DummyPlayer:
     def _played_hand(self, move):
         """
         Remove the played cards from the player's hand.
-        :param move: The cards to be removed
         """
         for card in move:
             self.cards.remove(card)

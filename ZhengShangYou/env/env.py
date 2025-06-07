@@ -126,7 +126,6 @@ class Env:
     def step(self):
         """
         Play a step of the game.
-        :return: The game information
         """
 
         move = self.players[self.current_player].act()
@@ -152,6 +151,7 @@ class Env:
 
         self.history.append(move)
 
+        # ensure only run once
         if not self._is_player_finished():
             self._players_played_out()
 
@@ -163,7 +163,6 @@ class Env:
     def _game_over(self):
         """
         Check if the game is over.
-        :return: True if the game is over, False otherwise
         """
 
         if (
@@ -203,7 +202,6 @@ class Env:
     def _get_info(self, player_id=None):
         """
         Get the game information.
-        :return: The game information
         """
         if player_id is None:
             player_id = self.current_player
@@ -222,7 +220,6 @@ class Env:
     def _is_round_over(self):
         """
         Check if the round is over.
-        :return: True if the round is over, False otherwise
         """
 
         return (
@@ -254,8 +251,7 @@ class Env:
 
     def _players_played_out(self):
         """
-        Check if the player has played out.
-        :return: True if the player has played out, False otherwise
+        Check if the player has played out all their cards
         """
         if len(self.players[self.current_player].cards) == 0:
             self.results.append(self.current_player)
@@ -264,6 +260,5 @@ class Env:
     def _is_player_finished(self):
         """
         Check if the player has finished.
-        :return: True if the player has finished, False otherwise
         """
         return self.results.count(self.current_player) > 0

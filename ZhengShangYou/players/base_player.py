@@ -1,8 +1,6 @@
-from ZhengShangYou.env.move_generator import MoveGenerator, _is_bomb
+from ZhengShangYou.env.move_generator import MoveGenerator
 
 import numpy as np
-
-from collections import deque
 
 
 class BasePlayer:
@@ -13,8 +11,6 @@ class BasePlayer:
     def play(self, info):
         """
         Play a card.
-        :param info: The game information
-        :return: The card to be played
         """
 
         selected_move = self._play(info)
@@ -31,11 +27,6 @@ class BasePlayer:
     def remember(self, state, action, reward, done):
         """
         Store the experience in a replay buffer.
-        :param state: The current state
-        :param action: The action taken
-        :param reward: The reward received
-        :param next_state: The next state
-        :param done: Whether the episode is done
         """
         pass
 
@@ -75,20 +66,15 @@ class BasePlayer:
 
         assert len(valid_moves) > 0, "Should have at least one valid move"
 
-        # select a random move from vlaid moves
-        # weight the moves based on the number of cards
+        cards_rem = len(info["cards"])
+        for move in valid_moves:
+            if len(move) == cards_rem:
+                return move
 
-        selected_move = valid_moves[0]
+        move_chances = [len(move) for move in valid_moves]
 
-        if len(info["cards"]) == 1:
-            selected_move = valid_moves[0]
-        elif len(valid_moves) >= 2:
-            move_chances = [len(move) for move in valid_moves]
+        move_chances = np.exp(move_chances) / np.sum(np.exp(move_chances))
 
-            move_chances = np.exp(move_chances) / np.sum(np.exp(move_chances))
-
-            selected_move = valid_moves[
-                np.random.choice(len(valid_moves), p=move_chances)
-            ]
+        selected_move = valid_moves[np.random.choice(len(valid_moves), p=move_chances)]
 
         return selected_move

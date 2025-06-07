@@ -16,7 +16,6 @@ import torch.nn as nn
 import numpy as np
 import random
 from copy import deepcopy
-import time
 
 from trueskill import Rating
 
@@ -133,6 +132,9 @@ class ZhengZeroPlayer(BasePlayer):
         self.rating = Rating()
 
     def _play(self, info):
+        """
+        Play cards
+        """
         valid_moves = self._get_valid_moves(info)
 
         if np.random.rand() <= self.params["epsilon"]:
@@ -151,16 +153,16 @@ class ZhengZeroPlayer(BasePlayer):
         return selected_move
 
     def remember(self, state, action, reward, done):
+        """
+        Store the experience in a replay buffer.
+        """
         if self.params["train"] is False:
             return
         if not done:
             self.current_replay.append((deepcopy(state), action, reward, done))
         if done:
             if self.params["train"]:
-                total_reward = -10
-
                 for i, (s, a, r, d) in enumerate(self.current_replay):
-                    total_reward = max(total_reward, r)
                     if i == len(self.current_replay) - 1:
                         break
                     self.replay_buffer.add(
@@ -172,9 +174,6 @@ class ZhengZeroPlayer(BasePlayer):
                         )
                     )
 
-                total_reward += reward
-
-                # logger.info(f"total reward: {total_reward:0.2f}")
             self.current_replay = []
 
     def update_target_model(self):
@@ -210,6 +209,7 @@ class ZhengZeroPlayer(BasePlayer):
         total_loss = 0
 
         for _ in range(self.params["replay_num"]):
+            # sample batch
             mini_batch, indices, weights = self.replay_buffer.sample(batch_size)
 
             weights = torch.tensor(weights, dtype=torch.float32).to(device)
@@ -225,6 +225,7 @@ class ZhengZeroPlayer(BasePlayer):
                 [[0.0]] * len(batch_state), dtype=torch.float32
             ).to(device)
 
+            # get q values for next states
             all_next_state_tensors = []
             split_sizes = []
 
@@ -233,9 +234,7 @@ class ZhengZeroPlayer(BasePlayer):
                 next_state_array = np.array(
                     [state2array(next_state, move) for move in valid_moves]
                 )
-                next_state_tensor = torch.tensor(
-                    next_state_array, dtype=torch.float32
-                ).to(device)
+                next_state_tensor = torch.tensor(next_state_array, dtype=torch.float32)
                 all_next_state_tensors.append(next_state_tensor)
                 split_sizes.append(len(valid_moves))
 
@@ -249,6 +248,7 @@ class ZhengZeroPlayer(BasePlayer):
 
                 q_values_split = torch.split(q_values, split_sizes)
                 for i, q in enumerate(q_values_split):
+                    # take max q value for each next state
                     batch_next_state[i] = torch.max(q)
 
             predicted = self.model(batch_state)
@@ -277,8 +277,7 @@ class ZhengZeroPlayer(BasePlayer):
 
     def clone(self, episode=None):
         """
-        Create a clone of the current player without copying replay buffer.
-        :return: A new instance of ZhengZeroPlayer with the same parameters
+        Create a clone of the current player without copying replay buffer (used for opponent pool in self-play)
         """
         player = deepcopy(
             ZhengZeroPlayer(
@@ -302,8 +301,6 @@ class ZhengZeroPlayer(BasePlayer):
 def state2array(info, move):
     """
     Convert the game information to a numpy array.
-    :param info: The game information
-    :return: The game information as a numpy array
     """
 
     # "trick": self.current_trick,
@@ -346,8 +343,6 @@ def state2array(info, move):
 def array2state(arr):
     """
     Convert the numpy array to game information.
-    :param arr: The numpy array to be converted
-    :return: The game information
     """
     trick = arr[:8]
     last_played_cards = arr[8:62]
@@ -375,8 +370,6 @@ def array2state(arr):
 def cards2array(cards):
     """
     Convert the cards to a numpy array.
-    :param cards: The cards to be converted
-    :return: The cards as a numpy array
     """
     arr = np.zeros(54)
     for card in cards:
@@ -387,8 +380,6 @@ def cards2array(cards):
 def array2cards(arr):
     """
     Convert the numpy array to cards.
-    :param arr: The numpy array to be converted
-    :return: The cards
     """
     cards = []
     for i in range(len(arr)):

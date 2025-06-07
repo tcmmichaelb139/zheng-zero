@@ -45,7 +45,6 @@ class MoveGenerator:
     def generate_single_card_moves(self):
         """
         Generate all possible single card moves.
-        :return: A list of possible single card moves
         """
         self.single_card_moves = []
         for card in self.cards_list:
@@ -55,7 +54,6 @@ class MoveGenerator:
     def generate_pair_card_moves(self):
         """
         Generate all possible pair card moves.
-        :return: A list of possible pair card moves
         """
         self.pair_card_moves = []
         for i in range(0, len(CARDS) - 1):
@@ -68,7 +66,6 @@ class MoveGenerator:
     def generate_triple_card_moves(self):
         """
         Generate all possible triple card moves.
-        :return: A list of possible triple card moves
         """
         self.triple_card_moves = []
         for i in range(0, len(CARDS) - 1):
@@ -80,7 +77,6 @@ class MoveGenerator:
     def generate_bomb_card_moves(self):
         """
         Generate all possible bomb card moves.
-        :return: A list of possible bomb card moves
         """
         self.bomb_card_moves = []
         for i in range(0, len(CARDS) - 1):
@@ -92,10 +88,6 @@ class MoveGenerator:
     def _generate_straight_moves(self, length, repeats=1):
         """
         Generate all possible straight moves.
-        :param length: The length of the straight
-        :param repeats: The number of repeats for each card
-        :param flush: Whether to include flush moves
-        :return: A list of possible straight moves
         """
         moves = []
 
@@ -162,28 +154,24 @@ class MoveGenerator:
     def generate_straight_single_moves(self, length):
         """
         Generate all possible straight moves.
-        :return: A list of possible straight moves
         """
         return self._generate_straight_moves(length, 1)
 
     def generate_straight_pair_moves(self, length):
         """
         Generate all possible straight moves.
-        :return: A list of possible straight moves
         """
         return self._generate_straight_moves(length, 2)
 
     def generate_straight_triple_moves(self, length):
         """
         Generate all possible straight moves.
-        :return: A list of possible straight moves
         """
         return self._generate_straight_moves(length, 3)
 
     def generate_all_moves(self):
         """
         Generate all possible straight moves.
-        :return: A list of possible straight moves
         """
         moves = []
         moves.extend(self.generate_single_card_moves())
@@ -199,8 +187,6 @@ class MoveGenerator:
     def generate_based_on_trick(self, trick, last_played_cards):
         """
         Generate all possible moves based on the current trick.
-        :param trick: The current trick
-        :return: A list of possible moves
         """
 
         if trick is None:
@@ -235,13 +221,7 @@ class MoveGenerator:
     def _valid_move(self, trick, move, last_played_cards):
         """
         Check if the move is valid based on the current trick and last played cards.
-        :param trick: The current trick
-        :param move: The move to be checked
-        :param last_played_cards: The last played cards
-        :return: True if the move is valid, False otherwise
         """
-
-        # TODO make sure straights end before 2
 
         if trick == None:
             return True
@@ -296,8 +276,6 @@ def _is_higher_straight(move, last_played_cards, rep=1):
 def _is_bomb(move):
     """
     Check if the move is a bomb.
-    :param move: The move to be checked
-    :return: True if the move is a bomb, False otherwise
     """
     return len(move) == 4 and move[0][0] == move[1][0] == move[2][0] == move[3][0]
 
@@ -305,8 +283,6 @@ def _is_bomb(move):
 def _is_straight(move, rep=1):
     """
     Check if the move is a straight.
-    :param move: The move to be checked
-    :return: True if the move is a straight, False otherwise
     """
     if len(move) < 3:
         return False
@@ -325,4 +301,7 @@ def _is_straight(move, rep=1):
 
 
 def _is_flush(move):
+    """
+    Check if the move is a flush (all cards of the same suit)
+    """
     return all(move[i][1] == move[i + 1][1] for i in range(0, len(move) - 1))

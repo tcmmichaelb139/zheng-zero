@@ -4,8 +4,6 @@ from .move_generator import _is_straight, _is_bomb
 def detect_move(move):
     """
     Detect the move type.
-    :param move: The move to be detected
-    :return: The move type
     """
     if len(move) == 0:
         return None

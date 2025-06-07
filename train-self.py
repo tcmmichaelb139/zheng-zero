@@ -6,7 +6,7 @@ if __name__ == "__main__":
     player = ZhengZeroPlayer(
         player_id=0,
         model_params={
-            "lr": 0.00001,
+            "lr": 0.001,
             "gamma": 0.99,
             "epsilon": 1,
             "epsilon_min": 0.1,
