@@ -189,6 +189,7 @@ class ZhengZeroPlayer(BasePlayer):
     def load_model(self):
         if self.model_path:
             if os.path.exists(self.model_path):
+                print(f"{self.player_name} loading model from {self.model_path}")
                 self.model.load_state_dict(
                     torch.load(self.model_path, weights_only=True)
                 )

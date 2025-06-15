@@ -64,16 +64,21 @@ def _print_cards(cards, player=""):
     if len(cards) == 0:
         logger.info(f"{player}: (pass)")
         return
+
     logger.info(
-        f"{player}: {[f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}" for card in cards]}"
+        f"{player}: {[f'{REVERSE_CARDS[card[0]]}' if card[0] in [13, 14] else f'{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}' for card in cards]}"
     )
 
 
-def _print_card(card):
+def _print_card(card, end="\n"):
     """
     Print the card.
     """
-    logger.info(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}")
+
+    if card[0] == 13 or card[0] == 14:  # Joker
+        print(f"{REVERSE_CARDS[card[0]]}", end=end)
+    else:
+        print(f"{REVERSE_CARDS[card[0]]} of {REVERSE_SUITS[card[1]]}", end=end)
 
 
 def card2int(card):
@@ -141,7 +146,7 @@ def string2card(card_str):
     return (CARDS[card_str[0]], SUITS[card_str[1]])
 
 
-def input2cards(prompt):
+def input2cards(prompt, cards):
     """
     Prompt the user for a list of cards and return them as a list of tuples.
     """
@@ -152,9 +157,11 @@ def input2cards(prompt):
             if input_cards == "":
                 return []
 
-            input_cards = input_cards.split(",")
+            input_cards = input_cards.split(" ")
 
-            input_cards = [string2card(card) for card in input_cards]
+            input_cards = [card for card in input_cards if card.strip()]
+
+            input_cards = [cards[int(i)] for i in input_cards]
 
             # sort the cards to ensure consistent order
             input_cards.sort(key=lambda x: (x[0], x[1]))  # sort by rank then suit

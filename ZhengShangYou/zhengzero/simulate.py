@@ -1,5 +1,4 @@
 from ZhengShangYou.env.zhengshangyou import ZhengShangYou
-from ZhengShangYou.env.utils import _print_cards
 from ZhengShangYou.env.utils import create_logger
 
 import numpy as np
