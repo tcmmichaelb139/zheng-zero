@@ -52,6 +52,13 @@ The strategy for choosing which versions to save in the pool was based on the [T
 
 Every episode 3 other models are selected to play against the current model.
 
+#### Results
+
+Testing the final results against random players (plays based on length), the model wins approximately 84% of the time.
+
+[Results against bots](./ZhengShangYou/zhengzero/logs/2025-06-15_13-55-37/)
+[Simulated play with cards](./ZhengShangYou/zhengzero/logs/2025-06-18_19-28-39/)
+
 # References
 
 - https://arxiv.org/abs/2106.06135
